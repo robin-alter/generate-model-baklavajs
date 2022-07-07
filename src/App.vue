@@ -1,5 +1,5 @@
 <template>
-    <div style="height: 100vh; width: 100vw">
+    <div style="height: 80vh; width: 100vw">
         <baklava-editor :plugin="viewPlugin" />
     </div>
 </template>
@@ -24,27 +24,15 @@ export default {
         };
     },
     created() {
-        // Register the plugins
-        // The view plugin is used for rendering the nodes
         this.editor.use(this.viewPlugin);
-        // The option plugin provides some default option UI elements
         this.editor.use(new OptionPlugin());
-        // The engine plugin calculates the nodes in the graph in the
-        // correct order using the "calculate" methods of the nodes
         this.editor.use(this.engine);
 
-        // Show a minimap in the top right corner
-        this.viewPlugin.enableMinimap = false;
-
-        // register the nodes we have defined, so they can be
-        // added by the user as well as saved & loaded.
         this.editor.registerNodeType("ColorNode", ColorNode);
         this.editor.registerNodeType("SideBarNode", SideBarNode);
 
-
         const tokenList = this.generateRandomTokens(5);
         const relationList = this.generateRandomRelations(5, tokenList);
-
 
         this.initializeGraph(tokenList, relationList);
 
@@ -74,20 +62,23 @@ export default {
             return relationList;
         },
         initializeGraph(tokenList, relationList) {
-            var x = 100;
-            var y = 100;
+            var nodeList = this.createNodeList(tokenList);
+            this.placeNodes(nodeList, 100 , 100 , 300, 1200);
+            this.connectNodes(nodeList, relationList);
+        },
+        createNodeList(tokenList) {
             var nodeList = [];
 
             tokenList.forEach(token => {
-                var node = this.addNodeWithCoordinates(ColorNode, token.name, token.value, x, y);
+                var node = this.createNode(ColorNode,token.name, token.value);
                 nodeList.push(node);
-                if(x <= 1200){
-                    x = x + 300;
-                } else {
-                    y = y + 300;
-                    x = 100;
-                }
             });
+            return nodeList
+        },
+        createNode(nodeType, name, value) {
+            return new nodeType(name, value);
+        },       
+        connectNodes(nodeList, relationList) {
             relationList.forEach(relation => {
                 nodeList.forEach(node => {
                     if(node.name == relation.start.name) {
@@ -101,14 +92,6 @@ export default {
             }
             )
         },
-        addNodeWithCoordinates(nodeType, name, value, x, y) {
-            const n = new nodeType(name, value);
-            
-            this.editor.addNode(n);
-            n.position.x = x;
-            n.position.y = y;
-            return n;
-        },
         addConnection(start,end){
             var inputName = (end.interfaces.size).toString();
             var outputName = (start.interfaces.size).toString();
@@ -118,8 +101,22 @@ export default {
                 end.getInterface(inputName),
                 start.getInterface(outputName)
             );
+        },
+        placeNodes(nodeList, xStart, yStart, step, max) {
+            var x = xStart;
+            var y = yStart;
+            nodeList.forEach(node => {   
+                this.editor.addNode(node);
+                node.position.x = x;
+                node.position.y = y;
+                if(x <= max){
+                    x = x + step;
+                } else {
+                    y = y + step;
+                    x = xStart;
+                }
+            });
         }
-
     }
 };
 </script>
