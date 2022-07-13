@@ -1,6 +1,15 @@
 <template>
-    <div style="height: 80vh; width: 100vw">
+    <div style="height: 80vh; width: 80vw">
         <baklava-editor :plugin="viewPlugin" />
+        <ResetButton
+        @reset="resetGraph()"
+        ></ResetButton>
+        <HeatmapToggle
+        @heatmap="toggleHeatmap()"
+        ></HeatmapToggle>
+        <ValueToggle
+        @value="toggleValue()"
+        ></ValueToggle>
     </div>
 </template>
 
@@ -10,17 +19,25 @@ import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
 import { OptionPlugin } from "@baklavajs/plugin-options-vue";
 import { Engine } from "@baklavajs/plugin-engine";
 import { ColorNode } from "./ColorNode";
-import { SideBarNode } from "./SideBarNode";
 import { Token } from "./token";
 import { Relation } from "./relation";
+import ResetButton from "./components/resetButton.vue"
+import HeatmapToggle from "./components/heatmapToggle.vue"
+import ValueToggle from "./components/valueToggle.vue"
 
 export default {
-    components: { },
+    components: {
+        ResetButton,
+        HeatmapToggle,
+        ValueToggle
+     },
     data() {
         return {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
             engine: new Engine(true),
+            tokenList: [],
+            relationList: [],
             color : 'green',
             thickness: 10,
             mode: "absolute"
@@ -32,14 +49,11 @@ export default {
         this.editor.use(this.engine);
 
         this.editor.registerNodeType("ColorNode", ColorNode);
-        this.editor.registerNodeType("SideBarNode", SideBarNode);
 
-        const tokenList = this.generateRandomTokens(5);
-        const relationList = this.generateRandomRelations(5, tokenList);
+        this.tokenList = this.generateRandomTokens(5);
+        this.relationList = this.generateRandomRelations(5);
 
-        this.initializeGraph(tokenList, relationList);
-
-        this.engine.calculate();
+        this.initializeGraph();
     },
     methods: {
         generateRandomTokens(amount) {
@@ -52,39 +66,56 @@ export default {
             }
             return tokenList;
         },
-        generateRandomRelations(amount, tokenList) {
+        generateRandomRelations(amount) {
             var relationList = [];
             for (let i= 0; i< amount; i++) {
-                var start = tokenList[Math.floor(Math.random() * tokenList.length)];
-                var end = tokenList[Math.floor(Math.random() * tokenList.length)];
+                var start = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
+                var end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
                 while(start == end) {
-                    end = tokenList[Math.floor(Math.random() * tokenList.length)];
+                    end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
                 } 
                 var relation = new Relation("Relation".concat(i.toString()),start,end);
                 relationList.push(relation);
             }
             return relationList;
         },
-        initializeGraph(tokenList, relationList) {
-            var nodeList = this.createNodeList(tokenList);
-            this.placeNodes(nodeList, 100 , 100 , 300, 1200);
-            this.connectNodes(nodeList, relationList);
+        initializeGraph() {
+            var nodeList = this.createNodeListFromData();
             this.partitionNodes(nodeList);
+            this.paintNodes(nodeList);
+            this.placeNodesInEditor(nodeList, 100 , 100 , 300, 900);
+            this.connectNodes();
         },
-        createNodeList(tokenList) {
+        createNodeListFromData() {
             var nodeList = [];
-
-            tokenList.forEach(token => {
+            this.tokenList.forEach(token => {
                 var node = this.createNode(ColorNode,token.name, token.absValue, token.relValue);
                 nodeList.push(node);
             });
+            this.nodeList = nodeList;
             return nodeList
         },
         createNode(nodeType, name, absValue, relValue) {
             return new nodeType(name, absValue, relValue);
-        },       
-        connectNodes(nodeList, relationList) {
-            relationList.forEach(relation => {
+        },     
+        placeNodesInEditor(nodeList, xStart, yStart, step, max) {
+            var x = xStart;
+            var y = yStart;
+            nodeList.forEach(node => {
+                this.editor.addNode(node);
+                node.position.x = x;
+                node.position.y = y;
+                if(x <= max){
+                    x = x + step;
+                } else {
+                    y = y + step;
+                    x = xStart;
+                }
+            });
+        },  
+        connectNodes() {
+            var nodeList = this.getNodeList();
+            this.relationList.forEach(relation => {
                 nodeList.forEach(node => {
                     if(node.name == relation.start.name) {
                         relation.start = node;
@@ -98,109 +129,240 @@ export default {
             )
         },
         addConnection(start,end){
-            var inputName = (end.interfaces.size).toString();
-            var outputName = (start.interfaces.size).toString();
-            end.addInputInterface(inputName);
-            start.addOutputInterface(outputName);
-            this.editor.addConnection(
-                end.getInterface(inputName),
-                start.getInterface(outputName)
-            );
-        },
-        placeNodes(nodeList, xStart, yStart, step, max) {
-            var x = xStart;
-            var y = yStart;
-            nodeList.forEach(node => {   
-                this.editor.addNode(node);
-                node.position.x = x;
-                node.position.y = y;
-                if(x <= max){
-                    x = x + step;
-                } else {
-                    y = y + step;
-                    x = xStart;
+            var validInput = 0;
+            var validOutput = 0;
+            var inputName = 0;
+            var outputName = 0;
+
+            end.interfaces.forEach(inter => {
+                if(inter.isInput) {
+                    if(inter.connectionCount < 1) {
+                        validInput = inter;
+                    }
                 }
             });
+            start.interfaces.forEach(inter => {
+                if(!inter.isInput) {
+                    if(inter.connectionCount < 1) {
+                        validOutput = inter;
+                    }
+                }
+            })
+
+            if(validInput != 0 && validOutput != 0) {
+                this.editor.addConnection(
+                    validInput,validOutput
+                )
+            }   else if(validInput == 0 && validOutput != 0) {
+                inputName = (end.interfaces.size).toString();
+                end.addInputInterface(inputName);
+                this.editor.addConnection(
+                    end.getInterface(inputName),
+                    validOutput
+                )
+            }   else if(validInput != 0 && validOutput == 0) {
+                outputName = (start.interfaces.size).toString();
+                start.addOutputInterface(outputName);
+                this.editor.addConnection(
+                    validInput,
+                    start.getInterface(outputName)
+                )
+            }   else {
+                inputName = (end.interfaces.size).toString();
+                outputName = (start.interfaces.size).toString();
+                end.addInputInterface(inputName);
+                start.addOutputInterface(outputName);
+                this.editor.addConnection(
+                    end.getInterface(inputName),
+                    start.getInterface(outputName)
+                );
+            }
         },
         partitionNodes(nodeList) {
-            var maxVal = 0;
+            var maximums = this.getMaximums(nodeList);
+            var absMax = maximums[0];
+            var relMax = maximums[1];
+
+            var abs80 = absMax *0.8;
+            var abs60 = absMax *0.6;
+            var abs40 = absMax *0.4;
+            var abs20 = absMax *0.2;
+            
+            var rel80 = relMax *0.8;
+            var rel60 = relMax *0.6;
+            var rel40 = relMax *0.4;
+            var rel20 = relMax *0.2;
+            nodeList.forEach(node => {
+                var absVal = node.absValue;
+                var relVal = node.relValue;
+                if(absVal >= abs80) {
+                    node.absRank = 80;
+                } 
+                else if (abs80 > absVal && absVal >= abs60) {
+                    node.absRank = 60;
+                }               
+                else if (abs60 > absVal && absVal >= abs40) {
+                    node.absRank = 40;
+                }
+                else if (abs40 > absVal && absVal >= abs20) {
+                    node.absRank = 20;
+                }
+                else if (abs20 > absVal) {
+                    node.absRank = 0;
+                }
+
+                if(relVal >= rel80) {
+                    node.relRank = 80;
+                } 
+                else if (rel80 > relVal && relVal >= rel60) {
+                    node.relRank = 60;
+                }               
+                else if (rel60 > relVal && relVal >= rel40) {
+                    node.relRank = 40;
+                }
+                else if (rel40 > relVal && relVal >= rel20) {
+                    node.relRank = 20;
+                }
+                else if (rel20 > relVal) {
+                    node.relRank = 0;
+                }    
+            });
+        },
+        getMaximums(nodeList) {
+            var maximums = [];
+            var maxAbs = 0;
+            var maxRel = 0;
+            nodeList.forEach(node => {
+                var absVal = node.absValue;
+                var relVal = node.relValue;
+                if(absVal >= maxAbs) {
+                    maxAbs = absVal;
+                }
+                if(relVal >= maxRel) {
+                    maxRel = relVal;
+                }
+            });
+            maximums.push(maxAbs);
+            maximums.push(maxRel);
+            return maximums;
+        },
+        paintNodes(nodeList) {
             if(this.mode == "absolute") {
                 nodeList.forEach(node => {
-                    var value = node.absValue;
-                    if(value >= maxVal) {
-                            maxVal = value;
-                        }
-                    });
-                    var val80 = 0.8 * maxVal;
-                    var val60 = 0.6 * maxVal;
-                    var val40 = 0.4 * maxVal;
-                    var val20 = 0.2 * maxVal;
-                nodeList.forEach(node => {
-                    var value = node.absValue;
-                    if(value >= val80) {
-                        node.customClasses = 'val80';
-                    } else if (val80 > value && value >= val60) {
-                        node.customClasses = 'val60';
-                    }               
-                    else if (val60 > value && value >= val40) {
-                        node.customClasses = 'val40';
+                    switch (node.absRank) {
+                        case 80:
+                            node.customClasses  = "val80";
+                            break;                        
+                        case 60:
+                            node.customClasses = "val60";
+                            break;                        
+                        case 40:
+                            node.customClasses = "val40";
+                            break;                        
+                        case 20:
+                            node.customClasses = "val20";
+                            break;              
+                        case 0:
+                            node.customClasses = "val0";
+                            break;
                     }
-                    else if (val40 > value && value >= val20) {
-                        node.customClasses = 'val20';
-                    }
-                    else if (val20 > value) {
-                        node.customClasses = 'val0';
-                    }                
                 });
-            } else if (this.mode == "relative") {
+            } else if(this.mode == "relative") {
                 nodeList.forEach(node => {
-                    var value = node.relValue;
-                    if(value >= maxVal) {
-                            maxVal = value;
-                        }
-                });
-                val80 = 0.8 * maxVal;
-                val60 = 0.6 * maxVal;
-                val40 = 0.4 * maxVal;
-                val20 = 0.2 * maxVal;
-
-                nodeList.forEach(node => {
-                    var value = node.relValue;
-                    if(value >= val80) {
-                        node.customClasses = 'val80';
-                    } else if (val80 > value && value >= val60) {
-                        node.customClasses = 'val60';
-                    }               
-                    else if (val60 > value && value >= val40) {
-                        node.customClasses = 'val40';
+                    switch (node.relRank) {
+                        case 80:
+                            node.customClasses = "val80";
+                            break;                        
+                        case 60:
+                            node.customClasses = "val60";
+                            break;                        
+                        case 40:
+                            node.customClasses = "val40";
+                            break;                        
+                        case 20:
+                            node.customClasses = "val20";
+                            break;              
+                        case 0:
+                            node.customClasses = "val0";
+                            break;
                     }
-                    else if (val40 > value && value >= val20) {
-                        node.customClasses = 'val20';
-                    }
-                    else if (val20 > value) {
-                        node.customClasses = 'val0';
-                    }                
                 });
             } else {
                 nodeList.forEach(node => {
-                    node.customClasses = '';
+                    node.customClasses = "";
                 });
             }
+        },
+        resetGraph(){
+            this.removeAllNodes();
+            this.initializeGraph();
+        },
+        toggleHeatmap() {
+            if(this.mode == "absolute" || this.mode == "relative") {
+                this.mode = "none";
+            }else {
+                this.mode = "absolute";
+            }
+            this.repaintGraph();
+        },
+        toggleValue() {
+            if(this.mode == "absolute") {
+                this.mode = "relative";
+            } else if(this.mode == "relative")  {
+                this.mode = "absolute";
+            } else {
+                this.mode = "absolute";
+            }
+            this.repaintGraph();
+        },
+        repaintGraph() {
+            var nodeList = this.getNodeList();
+            var positions = this.saveNodePositions(nodeList);
+            this.removeAllNodes();
+            this.paintNodes(nodeList);
+            this.placeAllNodes(nodeList, positions);
+            this.connectNodes();
+        },
+        saveNodePositions(nodeList) {
+            var positions =  [];
+            nodeList.forEach(node => {
+                positions.push([node.position.x,node.position.y]);
+            });
+            return positions;
+        },
+        placeAllNodes(nodeList, positions){
+            var i = 0;
+            nodeList.forEach(node => {
+                this.editor.addNode(node);
+                node.position.x = positions[i][0];
+                node.position.y = positions[i][1];
+                i++;
+            });
+        },
+        removeAllNodes() {
+            var nodeList = this.getNodeList();
+            nodeList.forEach(node => {
+                this.editor.removeNode(node);
+            });
+        },
+        getNodeList() {
+            var nodeList = [];
+            this.editor.nodes.forEach(node => {
+                nodeList.push(node);
+            });
+            return nodeList;
         },
         changeThickness(newThickness) {
             this.thickness = newThickness;
         },
         changeColor(newColor) {
             this.color = newColor;
-        },
-        changeMode(newMode) {
-            this.mode  = newMode;
         }
     }
 };
 </script>
 
-<style>
+<style >
 .connection {
     stroke-width: v-bind(thickness);
 }

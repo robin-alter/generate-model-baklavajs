@@ -7,5 +7,7 @@ export class ColorNode extends Node {
         this.name = name;
         this.absValue = absValue;
         this.relValue = relValue;
+        this.absRank = 80;
+        this.relRank = 80;
     }
 }

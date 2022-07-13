@@ -5,6 +5,6 @@ export class SideBarNode extends Node {
         super();
         this.type = "SideBarNode";
         this.name = "";
-        this.addOption("Open Sidebar", "ButtonOption", () => ({testtext: "any"}), "MySidebarOption")
+        this.addOption("Open Sidebar", "ButtonOption", () => ({testtext: "any"}), "SliderOption", "InputOption")
     }
 }
