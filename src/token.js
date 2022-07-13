@@ -1,6 +1,7 @@
 export class Token {
-    constructor(name, value) {
+    constructor(name, absValue, relValue) {
         this.name = name;
-        this.value = value;
+        this.absValue = absValue;
+        this.relValue = relValue;
     }
 }

@@ -1,0 +1,10 @@
+@import "../node_modules/@baklavajs/plugin-renderer-vue/dist/styles/variables.scss";
+
+$color-node-background: rgba(0, 126, 0, .6);
+$color-node-foreground: rgba(0, 126, 0, 0);
+$color-node-title-background: rgba(0, 126, 0, .1);
+$color-node-title-foreground: rgba(0, 0, 0, 1);;
+
+$color-connection-default: blue;
+
+@import "../node_modules/@baklavajs/plugin-renderer-vue/dist/styles/styles.scss";

@@ -20,7 +20,8 @@ export default {
         return {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
-            engine: new Engine(true)
+            engine: new Engine(true),
+            absMode: true
         };
     },
     created() {
@@ -42,8 +43,9 @@ export default {
         generateRandomTokens(amount) {
             var tokenList = [];
             for(let i = 0; i < amount; i++) {
-                var value = Math.floor(Math.random() * 250);
-                var element = new Token("Element".concat(i.toString()),value);
+                var absValue = Math.floor(Math.random() * 250);
+                var relValue = Math.floor(Math.random() * 250);
+                var element = new Token("Element".concat(i.toString()),absValue, relValue);
                 tokenList.push(element)
             }
             return tokenList;
@@ -65,18 +67,19 @@ export default {
             var nodeList = this.createNodeList(tokenList);
             this.placeNodes(nodeList, 100 , 100 , 300, 1200);
             this.connectNodes(nodeList, relationList);
+            this.partitionNodes(nodeList);
         },
         createNodeList(tokenList) {
             var nodeList = [];
 
             tokenList.forEach(token => {
-                var node = this.createNode(ColorNode,token.name, token.value);
+                var node = this.createNode(ColorNode,token.name, token.absValue, token.relValue);
                 nodeList.push(node);
             });
             return nodeList
         },
-        createNode(nodeType, name, value) {
-            return new nodeType(name, value);
+        createNode(nodeType, name, absValue, relValue) {
+            return new nodeType(name, absValue, relValue);
         },       
         connectNodes(nodeList, relationList) {
             relationList.forEach(relation => {
@@ -116,7 +119,89 @@ export default {
                     x = xStart;
                 }
             });
+        },
+        partitionNodes(nodeList) {
+            var maxVal = 0;
+            if(this.absMode) {
+                nodeList.forEach(node => {
+                    var value = node.absValue;
+                    if(value >= maxVal) {
+                            maxVal = value;
+                        }
+                    });
+                    var val80 = 0.8 * maxVal;
+                    var val60 = 0.6 * maxVal;
+                    var val40 = 0.4 * maxVal;
+                    var val20 = 0.2 * maxVal;
+                nodeList.forEach(node => {
+                    var value = node.absValue;
+                    if(value >= val80) {
+                        node.customClasses = 'val80';
+                    } else if (val80 > value && value >= val60) {
+                        node.customClasses = 'val60';
+                    }               
+                    else if (val60 > value && value >= val40) {
+                        node.customClasses = 'val40';
+                    }
+                    else if (val40 > value && value >= val20) {
+                        node.customClasses = 'val20';
+                    }
+                    else if (val20 > value) {
+                        node.customClasses = 'val0';
+                    }                
+                });
+            } else {
+                nodeList.forEach(node => {
+                    var value = node.relValue;
+                    if(value >= maxVal) {
+                            maxVal = value;
+                        }
+                });
+                val80 = 0.8 * maxVal;
+                val60 = 0.6 * maxVal;
+                val40 = 0.4 * maxVal;
+                val20 = 0.2 * maxVal;
+
+                nodeList.forEach(node => {
+                    var value = node.relValue;
+                    if(value >= val80) {
+                        node.customClasses = 'val80';
+                    } else if (val80 > value && value >= val60) {
+                        node.customClasses = 'val60';
+                    }               
+                    else if (val60 > value && value >= val40) {
+                        node.customClasses = 'val40';
+                    }
+                    else if (val40 > value && value >= val20) {
+                        node.customClasses = 'val20';
+                    }
+                    else if (val20 > value) {
+                        node.customClasses = 'val0';
+                    }                
+                });
+            }
         }
     }
 };
 </script>
+
+<style>
+.connection {
+    stroke-width: 10px;
+}
+.val80 {
+    background: rgb(0,255,0,0.6)
+}
+.val60 {
+    background: rgba(205, 0, 0, 0.6)
+}
+.val40 {
+    background: rgba(230, 255, 1, 0.6)
+}
+.val20 {
+    background: rgba(41, 5, 243, 0.6)
+}
+.val0 {
+    background: rgba(208, 3, 226, 0.6)
+}
+</style>
