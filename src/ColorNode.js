@@ -7,7 +7,5 @@ export class ColorNode extends Node {
         this.name = name;
         this.absValue = absValue;
         this.relValue = relValue;
-        this.addOption(this.absValue.toString(), "InputOption");
-        this.addOption(this.relValue.toString(), "InputOption");
     }
 }

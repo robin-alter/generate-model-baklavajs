@@ -21,7 +21,9 @@ export default {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
             engine: new Engine(true),
-            absMode: true
+            color : 'green',
+            thickness: 10,
+            mode: "absolute"
         };
     },
     created() {
@@ -122,7 +124,7 @@ export default {
         },
         partitionNodes(nodeList) {
             var maxVal = 0;
-            if(this.absMode) {
+            if(this.mode == "absolute") {
                 nodeList.forEach(node => {
                     var value = node.absValue;
                     if(value >= maxVal) {
@@ -150,7 +152,7 @@ export default {
                         node.customClasses = 'val0';
                     }                
                 });
-            } else {
+            } else if (this.mode == "relative") {
                 nodeList.forEach(node => {
                     var value = node.relValue;
                     if(value >= maxVal) {
@@ -179,7 +181,20 @@ export default {
                         node.customClasses = 'val0';
                     }                
                 });
+            } else {
+                nodeList.forEach(node => {
+                    node.customClasses = '';
+                });
             }
+        },
+        changeThickness(newThickness) {
+            this.thickness = newThickness;
+        },
+        changeColor(newColor) {
+            this.color = newColor;
+        },
+        changeMode(newMode) {
+            this.mode  = newMode;
         }
     }
 };
@@ -187,21 +202,26 @@ export default {
 
 <style>
 .connection {
-    stroke-width: 10px;
+    stroke-width: v-bind(thickness);
 }
 .val80 {
-    background: rgb(0,255,0,0.6)
+    background: v-bind(color);
+    filter: brightness(200%);
 }
 .val60 {
-    background: rgba(205, 0, 0, 0.6)
+    background: v-bind(color);
+    filter: brightness(160%);
 }
 .val40 {
-    background: rgba(230, 255, 1, 0.6)
+    background: v-bind(color);
+    filter: brightness(120%);
 }
 .val20 {
-    background: rgba(41, 5, 243, 0.6)
+    background: v-bind(color);
+    filter: brightness(80%);
 }
 .val0 {
-    background: rgba(208, 3, 226, 0.6)
+    background: v-bind(color);
+    filter: brightness(40%);
 }
 </style>
