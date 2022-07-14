@@ -1,15 +1,22 @@
 <template>
+
     <div style="height: 80vh; width: 80vw">
         <baklava-editor :plugin="viewPlugin" />
-        <ResetButton
-        @reset="resetGraph()"
-        ></ResetButton>
-        <HeatmapToggle
-        @heatmap="toggleHeatmap()"
-        ></HeatmapToggle>
-        <ValueToggle
-        @value="toggleValue()"
-        ></ValueToggle>
+        <div class="sideBar">
+            Options
+            <button @click="resetGraph()">Reset Graph</button>
+            <button @click="toggleHeatmap()">Toggle Heatmap</button>
+            <button @click="toggleValue()">Toggle Values</button>
+            <button @click="changeColor()">Change Color</button>
+        </div>
+        <div class="legend">
+            <div class="legend0">{{maximum*0}} - {{Math.floor(maximum*0.2)}}</div>
+            <div class="legend20">{{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}</div>
+            <div class="legend40">{{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}</div>
+            <div class="legend60">{{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}</div>
+            <div class="legend80">{{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}</div>
+            Legend
+        </div>
     </div>
 </template>
 
@@ -21,16 +28,10 @@ import { Engine } from "@baklavajs/plugin-engine";
 import { ColorNode } from "./ColorNode";
 import { Token } from "./token";
 import { Relation } from "./relation";
-import ResetButton from "./components/resetButton.vue"
-import HeatmapToggle from "./components/heatmapToggle.vue"
-import ValueToggle from "./components/valueToggle.vue"
 
 export default {
     components: {
-        ResetButton,
-        HeatmapToggle,
-        ValueToggle
-     },
+    },
     data() {
         return {
             editor: new Editor(),
@@ -39,8 +40,11 @@ export default {
             tokenList: [],
             relationList: [],
             color : 'green',
-            thickness: 10,
-            mode: "absolute"
+            thickness: 2,
+            mode: "absolute",
+            maximum: 0,
+            absMax: 0,
+            relMax: 0
         };
     },
     created() {
@@ -116,15 +120,19 @@ export default {
         connectNodes() {
             var nodeList = this.getNodeList();
             this.relationList.forEach(relation => {
+                var start = 0;
+                var end = 0;
                 nodeList.forEach(node => {
                     if(node.name == relation.start.name) {
-                        relation.start = node;
+                        start = node;
                     } else if(node.name == relation.end.name) {
-                        relation.end = node;
+                        end = node;
                     }
                 }
                 )
-                this.addConnection(relation.start,relation.end);
+                if(start != 0 && end != 0) {
+                    this.addConnection(start,end);
+                }
             }
             )
         },
@@ -242,12 +250,15 @@ export default {
                     maxRel = relVal;
                 }
             });
+            this.relMax = maxRel;
+            this.absMax = maxAbs;
             maximums.push(maxAbs);
             maximums.push(maxRel);
             return maximums;
         },
         paintNodes(nodeList) {
             if(this.mode == "absolute") {
+                this.maximum = this.absMax;
                 nodeList.forEach(node => {
                     switch (node.absRank) {
                         case 80:
@@ -268,6 +279,7 @@ export default {
                     }
                 });
             } else if(this.mode == "relative") {
+                this.maximum = this.relMax;
                 nodeList.forEach(node => {
                     switch (node.relRank) {
                         case 80:
@@ -289,7 +301,7 @@ export default {
                 });
             } else {
                 nodeList.forEach(node => {
-                    node.customClasses = "";
+                    node.customClasses = "default";
                 });
             }
         },
@@ -324,19 +336,17 @@ export default {
             this.connectNodes();
         },
         saveNodePositions(nodeList) {
-            var positions =  [];
+            var positions =  {};
             nodeList.forEach(node => {
-                positions.push([node.position.x,node.position.y]);
+                positions[node.name] = [node.position.x,node.position.y];
             });
             return positions;
         },
         placeAllNodes(nodeList, positions){
-            var i = 0;
             nodeList.forEach(node => {
                 this.editor.addNode(node);
-                node.position.x = positions[i][0];
-                node.position.y = positions[i][1];
-                i++;
+                node.position.x = positions[node.name][0];
+                node.position.y = positions[node.name][1];
             });
         },
         removeAllNodes() {
@@ -352,11 +362,12 @@ export default {
             });
             return nodeList;
         },
-        changeThickness(newThickness) {
-            this.thickness = newThickness;
-        },
-        changeColor(newColor) {
-            this.color = newColor;
+        changeColor() {
+            if(this.color == 'green') {
+                this.color = 'red';
+            } else if(this.color == 'red')  {
+                this.color = 'green';
+            }
         }
     }
 };
@@ -366,24 +377,120 @@ export default {
 .connection {
     stroke-width: v-bind(thickness);
 }
+.__port{
+        opacity: 0;
+}
 .val80 {
+    text-align: center;
     background: v-bind(color);
     filter: brightness(200%);
 }
 .val60 {
+    text-align: center;
     background: v-bind(color);
     filter: brightness(160%);
 }
 .val40 {
+    text-align: center;
     background: v-bind(color);
     filter: brightness(120%);
 }
 .val20 {
+    text-align: center;
     background: v-bind(color);
     filter: brightness(80%);
 }
 .val0 {
+    text-align: center;
     background: v-bind(color);
     filter: brightness(40%);
+}
+.default {
+    text-align: center;
+}
+.sideBar {
+    text-align: center;
+    font-size: 40px;
+    position: absolute;
+    right: 3.3vw;
+    top: 0.9vh;
+    width: 15vw;
+    height: 79.5vh;
+    border: 2px solid #000000
+}
+.legend {
+    position: absolute;
+    left: 0.5vw;
+    height: 19.5vh;
+    width: 95vw;
+    border:2px solid #000000;
+    line-height: 20vh;
+    text-align: right;
+    font-size: 80px;
+}
+.legend0 {
+    background: v-bind(color);
+    filter: brightness(40%);
+    position: absolute;
+    left: 0.5vw;
+    top: 0.5vh;
+    height: 17vh;
+    width: 14vw;
+    border:2px solid #000000;
+    text-align: center;
+    line-height: 15vh;
+    font-size: 30px;
+}
+.legend20 {
+    background: v-bind(color);
+    filter: brightness(80%);
+    position: absolute;
+    left: 15.5vw ;
+    top: 0.5vh;
+    height: 17vh;
+    width: 14vw;
+    border:2px solid #000000;
+    text-align: center;
+    line-height: 15vh;
+    font-size: 30px;
+}
+.legend40 {
+    background: v-bind(color);
+    filter: brightness(120%);
+    position: absolute;
+    left: 30.5vw;
+    top: 0.5vh;
+    height: 17vh;
+    width: 14vw;
+    border:2px solid #000000;
+    text-align: center;
+    line-height: 15vh;
+    font-size: 30px;
+}
+.legend60 {
+    background: v-bind(color);
+    filter: brightness(160%);
+    position: absolute;
+    left: 45.5vw;
+    top: 0.5vh;
+    height: 17vh;
+    width: 14vw;
+    border:2px solid #000000;
+    text-align: center;
+    line-height: 15vh;
+    font-size: 30px;
+}
+.legend80 {
+    background: v-bind(color);
+    filter: brightness(200%);
+    position: absolute;
+    left: 60.5vw;
+    top: 0.5vh;
+    height: 17vh;
+    width: 14vw;
+    border:2px solid #000000;
+    text-align: center;
+    line-height: 15vh;
+    font-size: 30px;
 }
 </style>
