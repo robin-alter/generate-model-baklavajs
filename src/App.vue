@@ -1,5 +1,4 @@
 <template>
-
     <div style="height: 80vh; width: 80vw">
         <baklava-editor :plugin="viewPlugin" />
         <div class="sideBar">
@@ -7,7 +6,6 @@
             <button @click="resetGraph()">Reset Graph</button>
             <button @click="toggleHeatmap()">Toggle Heatmap</button>
             <button @click="toggleValue()">Toggle Values</button>
-            <button @click="changeColor()">Change Color</button>
         </div>
         <div class="legend">
             <div class="legend0">{{maximum*0}} - {{Math.floor(maximum*0.2)}}</div>
@@ -26,6 +24,7 @@ import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
 import { OptionPlugin } from "@baklavajs/plugin-options-vue";
 import { Engine } from "@baklavajs/plugin-engine";
 import { ColorNode } from "./ColorNode";
+import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
 
@@ -40,7 +39,6 @@ export default {
             tokenList: [],
             relationList: [],
             color : 'green',
-            thickness: 2,
             mode: "absolute",
             maximum: 0,
             absMax: 0,
@@ -53,9 +51,10 @@ export default {
         this.editor.use(this.engine);
 
         this.editor.registerNodeType("ColorNode", ColorNode);
+        this.editor.registerNodeType("RelationNode", RelationNode);
 
-        this.tokenList = this.generateRandomTokens(5);
-        this.relationList = this.generateRandomRelations(5);
+        this.tokenList = this.generateRandomTokens(2);
+        this.relationList = this.generateRandomRelations(4);
 
         this.initializeGraph();
     },
@@ -78,7 +77,9 @@ export default {
                 while(start == end) {
                     end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
                 } 
-                var relation = new Relation("Relation".concat(i.toString()),start,end);
+                var absValue = Math.floor(Math.random() * 250);
+                var relValue = Math.floor(Math.random() * 250);
+                var relation = new Relation("Relation".concat(i.toString()),absValue, relValue, start, end);
                 relationList.push(relation);
             }
             return relationList;
@@ -96,6 +97,24 @@ export default {
                 var node = this.createNode(ColorNode,token.name, token.absValue, token.relValue);
                 nodeList.push(node);
             });
+            this.nodeList = nodeList;
+            this.relationList.forEach(relation => {
+                var start = 0;
+                var end = 0;
+                this.nodeList.forEach(node => {
+                    if(node.name == relation.start.name) {
+                        start = node;
+                    } else if(node.name == relation.end.name) {
+                        end = node;
+                    }
+                }
+                )
+                if(start != 0 && end != 0) {
+                    var node = new RelationNode(relation.name, start, end, relation.absValue, relation.relValue)
+                    nodeList.push(node);
+                }
+            }
+            )
             this.nodeList = nodeList;
             return nodeList
         },
@@ -119,28 +138,19 @@ export default {
         },  
         connectNodes() {
             var nodeList = this.getNodeList();
-            this.relationList.forEach(relation => {
-                var start = 0;
-                var end = 0;
-                nodeList.forEach(node => {
-                    if(node.name == relation.start.name) {
-                        start = node;
-                    } else if(node.name == relation.end.name) {
-                        end = node;
-                    }
+            nodeList.forEach(node => {
+                if(node.type == "RelationNode") {
+                    this.addConnection(node);
                 }
-                )
-                if(start != 0 && end != 0) {
-                    this.addConnection(start,end);
-                }
-            }
-            )
+            });
         },
-        addConnection(start,end){
+        addConnection(node){
             var validInput = 0;
             var validOutput = 0;
             var inputName = 0;
             var outputName = 0;
+            var end = node.end;
+            var start = node.start;
 
             end.interfaces.forEach(inter => {
                 if(inter.isInput) {
@@ -151,21 +161,27 @@ export default {
             });
             start.interfaces.forEach(inter => {
                 if(!inter.isInput) {
-                    if(inter.connectionCount < 1) {
-                        validOutput = inter;
-                    }
+                    validOutput = inter;
                 }
             })
-
             if(validInput != 0 && validOutput != 0) {
                 this.editor.addConnection(
-                    validInput,validOutput
+                    validInput,
+                    node.getInterface(end.name)
+                )
+                this.editor.addConnection(
+                    node.getInterface(start.name), 
+                    validOutput
                 )
             }   else if(validInput == 0 && validOutput != 0) {
                 inputName = (end.interfaces.size).toString();
                 end.addInputInterface(inputName);
                 this.editor.addConnection(
                     end.getInterface(inputName),
+                    node.getInterface(end.name)
+                )
+                this.editor.addConnection(
+                    node.getInterface(start.name), 
                     validOutput
                 )
             }   else if(validInput != 0 && validOutput == 0) {
@@ -173,7 +189,11 @@ export default {
                 start.addOutputInterface(outputName);
                 this.editor.addConnection(
                     validInput,
-                    start.getInterface(outputName)
+                    node.getInterface(end.name)
+                )
+                this.editor.addConnection(
+                    start.getInterface(outputName),
+                    node.getInterface(start.name)
                 )
             }   else {
                 inputName = (end.interfaces.size).toString();
@@ -182,7 +202,11 @@ export default {
                 start.addOutputInterface(outputName);
                 this.editor.addConnection(
                     end.getInterface(inputName),
-                    start.getInterface(outputName)
+                    node.getInterface(end.name)
+                );                
+                this.editor.addConnection(
+                    start.getInterface(outputName),
+                    node.getInterface(start.name)
                 );
             }
         },
@@ -262,19 +286,39 @@ export default {
                 nodeList.forEach(node => {
                     switch (node.absRank) {
                         case 80:
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val80Rel"
+                            } else {
                             node.customClasses  = "val80";
+                            }
                             break;                        
                         case 60:
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val60Rel"
+                            } else {
                             node.customClasses = "val60";
+                            }
                             break;                        
                         case 40:
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val40Rel"
+                            } else {
                             node.customClasses = "val40";
+                            }
                             break;                        
-                        case 20:
+                        case 20:                            
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val20Rel"
+                            } else {
                             node.customClasses = "val20";
+                            }
                             break;              
-                        case 0:
+                        case 0:                            
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val0Rel"
+                            } else {
                             node.customClasses = "val0";
+                            }
                             break;
                     }
                 });
@@ -283,25 +327,49 @@ export default {
                 nodeList.forEach(node => {
                     switch (node.relRank) {
                         case 80:
-                            node.customClasses = "val80";
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val80Rel"
+                            } else {
+                            node.customClasses  = "val80";
+                            }
                             break;                        
                         case 60:
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val60Rel"
+                            } else {
                             node.customClasses = "val60";
+                            }
                             break;                        
                         case 40:
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val40Rel"
+                            } else {
                             node.customClasses = "val40";
+                            }
                             break;                        
-                        case 20:
+                        case 20:                            
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val20Rel"
+                            } else {
                             node.customClasses = "val20";
+                            }
                             break;              
-                        case 0:
+                        case 0:                            
+                            if(node.type=="RelationNode") {
+                                node.customClasses = "val0Rel"
+                            } else {
                             node.customClasses = "val0";
+                            }
                             break;
                     }
                 });
             } else {
-                nodeList.forEach(node => {
-                    node.customClasses = "default";
+                nodeList.forEach(node => {                           
+                    if(node.type=="RelationNode") {
+                        node.customClasses = "defaultRel"
+                    } else {
+                        node.customClasses = "default";
+                    }
                 });
             }
         },
@@ -361,22 +429,21 @@ export default {
                 nodeList.push(node);
             });
             return nodeList;
-        },
-        changeColor() {
-            if(this.color == 'green') {
-                this.color = 'red';
-            } else if(this.color == 'red')  {
-                this.color = 'green';
-            }
         }
     }
 };
 </script>
 
 <style >
-.connection {
-    stroke-width: v-bind(thickness);
+
+.--input {
+    max-height: 0px;
 }
+
+.--output {
+    max-height: 0px;
+}
+
 .__port{
         opacity: 0;
 }
@@ -385,28 +452,125 @@ export default {
     background: v-bind(color);
     filter: brightness(200%);
 }
+.val80 .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
+}
 .val60 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(160%);
+}
+.val60 .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
 }
 .val40 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(120%);
 }
+.val40 .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
+}
 .val20 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(80%);
+}
+.val20 .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
 }
 .val0 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(40%);
 }
+.val0 .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
+}
+
+.val80Rel {
+    text-align: center;
+    background: v-bind(color);
+    filter: brightness(200%);
+    max-width: 8rem;
+}
+.val80Rel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
+}
+.val60Rel {
+    text-align: center;
+    background: v-bind(color);
+    filter: brightness(160%);
+    max-width: 8rem;
+}
+.val60Rel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
+}
+.val40Rel {
+    text-align: center;
+    background: v-bind(color);
+    filter: brightness(120%);
+    max-width: 8rem;
+}
+.val40Rel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
+}
+.val20Rel {
+    text-align: center;
+    background: v-bind(color);
+    filter: brightness(80%);
+    max-width: 8rem;
+}
+.val20Rel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
+}
+.val0Rel {
+    text-align: center;
+    background: v-bind(color);
+    filter: brightness(40%);
+    max-width: 8rem;
+}
+.val0Rel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
+}
+
 .default {
     text-align: center;
+}
+.default .__title{
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 2rem;
+}
+
+.defaultRel {
+    text-align: center;
+    max-width: 8rem;
+}
+.defaultRel .__title {
+    overflow-wrap: break-word;
+    max-height: fit-content;
+    font-size: 1.2rem;
 }
 .sideBar {
     text-align: center;
