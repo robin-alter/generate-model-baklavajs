@@ -1,62 +1,27 @@
 <template>
-    <v-app >
-        <v-container 
-        fluid 
-        > 
-            <v-row
-                no-gutters
-                style="flex-wrap: nowrap"
-            >
-                <v-col
-                    cols="auto"
-                    style="min-width: 100px; max-width: 100%;"
-                    class="flex-grow-1 flex-shrink-0"
-                >
-                <baklava-editor 
-                :plugin="viewPlugin" /> 
-                </v-col>
-                <v-col
-                    cols="auto"
-                    style="min-width: 100px;"
-                    class="flex-grow-0 flex-shrink-1"
-                >
-                    <v-card>
-                        <v-card-title> 
-                            Options
-                        </v-card-title>
-                        <v-card-actions>
-                            <v-btn @click="resetGraph()">Reset Graph</v-btn>
-                        </v-card-actions>
-                        <v-card-actions>
-                            <v-btn @click="toggleHeatmap()">Toggle Heatmap</v-btn>
-                        </v-card-actions>
-                        <v-card-actions>
-                            <v-btn @click="toggleValue()">Toggle Values</v-btn> 
-                        </v-card-actions>
-                        <v-color-picker
-                        canvas-height="200px"
-                        hide-inputs
-                        v-model=color
-                        >
-                        </v-color-picker>
-                    </v-card>
-                </v-col>
-            </v-row>
-            <v-row>
-
-            </v-row>
-            <v-card>           
-                <v-card-title>
-                    Legend
-                </v-card-title>
-                <div class="legend0">   {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}     </div>
-                <div class="legend20">  {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}} </div>
-                <div class="legend40">  {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}} </div>
-                <div class="legend60">  {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}} </div>
-                <div class="legend80">  {{maximum*0}} - {{Math.floor(maximum*0.2)}}                 </div>
-            </v-card>
-        </v-container>
-    </v-app>
+    <div style="height: 80vh; width: 80vw">
+        <baklava-editor :plugin="viewPlugin" />
+        <div class="sideBar">
+            Options
+            <button class="resetButton" @click="resetGraph()">Reset Graph</button>
+            <button class="heatmapButton" @click="toggleHeatmap()">Toggle Heatmap</button>
+            <button class= "valueButton" @click="toggleValue()">Toggle Values</button>
+            <div class="colorPicker">
+            <color-picker 
+            :width=200
+            :height=200
+            v-model="color"></color-picker>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend0">   {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}     </div>
+            <div class="legend20">  {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}} </div>
+            <div class="legend40">  {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}} </div>
+            <div class="legend60">  {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}} </div>
+            <div class="legend80">  {{maximum*0}} - {{Math.floor(maximum*0.2)}}                 </div>
+            Legend
+        </div>
+    </div>
 </template>
 
 <script>
@@ -68,16 +33,17 @@ import { ColorNode } from "./ColorNode";
 import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
+import ColorPicker from 'vue-color-picker-wheel';
 
 export default {
     components: {
+        ColorPicker
     },
     data() {
         return {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
             engine: new Engine(true),
-            allNodes: [],
             tokenList: [],
             relationList: [],
             color : 'green',
@@ -95,8 +61,8 @@ export default {
         this.editor.registerNodeType("ColorNode", ColorNode);
         this.editor.registerNodeType("RelationNode", RelationNode);
 
-        this.tokenList = this.generateRandomTokens(5);
-        this.relationList = this.generateRandomRelations(5);
+        this.tokenList = this.generateRandomTokens(2);
+        this.relationList = this.generateRandomRelations(4);
 
         this.initializeGraph();
     },
@@ -614,6 +580,26 @@ export default {
     max-height: fit-content;
     font-size: 1.2rem;
 }
+.sideBar {
+    text-align: center;
+    font-size: 40px;
+    position: absolute;
+    right: 3.3vw;
+    top: 0.9vh;
+    width: 15vw;
+    height: 79.5vh;
+    border: 2px solid #000000
+}
+.legend {
+    position: absolute;
+    left: 0.5vw;
+    height: 19.5vh;
+    width: 95vw;
+    border:2px solid #000000;
+    line-height: 20vh;
+    text-align: right;
+    font-size: 80px;
+}
 .legend80 {
     background: v-bind(color);
     filter: brightness(200%);
@@ -678,5 +664,13 @@ export default {
     text-align: center;
     line-height: 15vh;
     font-size: 30px;
+}
+.colorPicker {
+    position: absolute;
+    margin-top: 43.7vh;
+    margin-bottom: auto;
+    margin-left: 1.5vw;
+    max-height: 200px;
+    max-width: 200px;
 }
 </style>
