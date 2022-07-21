@@ -3,16 +3,22 @@
         <baklava-editor :plugin="viewPlugin" />
         <div class="sideBar">
             Options
-            <button @click="resetGraph()">Reset Graph</button>
-            <button @click="toggleHeatmap()">Toggle Heatmap</button>
-            <button @click="toggleValue()">Toggle Values</button>
+            <button class="resetButton" @click="resetGraph()">Reset Graph</button>
+            <button class="heatmapButton" @click="toggleHeatmap()">Toggle Heatmap</button>
+            <button class= "valueButton" @click="toggleValue()">Toggle Values</button>
+            <div class="colorPicker">
+            <color-picker 
+            :width=200
+            :height=200
+            v-model="color"></color-picker>
+            </div>
         </div>
         <div class="legend">
-            <div class="legend0">{{maximum*0}} - {{Math.floor(maximum*0.2)}}</div>
-            <div class="legend20">{{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}</div>
-            <div class="legend40">{{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}</div>
-            <div class="legend60">{{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}</div>
-            <div class="legend80">{{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}</div>
+            <div class="legend0">   {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}     </div>
+            <div class="legend20">  {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}} </div>
+            <div class="legend40">  {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}} </div>
+            <div class="legend60">  {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}} </div>
+            <div class="legend80">  {{maximum*0}} - {{Math.floor(maximum*0.2)}}                 </div>
             Legend
         </div>
     </div>
@@ -27,9 +33,11 @@ import { ColorNode } from "./ColorNode";
 import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
+import ColorPicker from 'vue-color-picker-wheel';
 
 export default {
     components: {
+        ColorPicker
     },
     data() {
         return {
@@ -447,22 +455,22 @@ export default {
 .__port{
         opacity: 0;
 }
-.val80 {
+.val0 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(200%);
 }
-.val80 .__title{
+.val0 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
 }
-.val60 {
+.val20 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(160%);
 }
-.val60 .__title{
+.val20 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
@@ -477,45 +485,45 @@ export default {
     max-height: fit-content;
     font-size: 2rem;
 }
-.val20 {
+.val60 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(80%);
 }
-.val20 .__title{
+.val60 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
 }
-.val0 {
+.val80 {
     text-align: center;
     background: v-bind(color);
     filter: brightness(40%);
 }
-.val0 .__title{
+.val80 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
 }
 
-.val80Rel {
+.val0Rel {
     text-align: center;
     background: v-bind(color);
     filter: brightness(200%);
     max-width: 8rem;
 }
-.val80Rel .__title {
+.val0Rel .__title {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
 }
-.val60Rel {
+.val20Rel {
     text-align: center;
     background: v-bind(color);
     filter: brightness(160%);
     max-width: 8rem;
 }
-.val60Rel .__title {
+.val20Rel .__title {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
@@ -531,24 +539,24 @@ export default {
     max-height: fit-content;
     font-size: 1.2rem;
 }
-.val20Rel {
+.val60Rel {
     text-align: center;
     background: v-bind(color);
     filter: brightness(80%);
     max-width: 8rem;
 }
-.val20Rel .__title {
+.val60Rel .__title {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
 }
-.val0Rel {
+.val80Rel {
     text-align: center;
     background: v-bind(color);
     filter: brightness(40%);
     max-width: 8rem;
 }
-.val0Rel .__title {
+.val80Rel .__title {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
@@ -592,9 +600,9 @@ export default {
     text-align: right;
     font-size: 80px;
 }
-.legend0 {
+.legend80 {
     background: v-bind(color);
-    filter: brightness(40%);
+    filter: brightness(200%);
     position: absolute;
     left: 0.5vw;
     top: 0.5vh;
@@ -605,9 +613,9 @@ export default {
     line-height: 15vh;
     font-size: 30px;
 }
-.legend20 {
+.legend60 {
     background: v-bind(color);
-    filter: brightness(80%);
+    filter: brightness(160%);
     position: absolute;
     left: 15.5vw ;
     top: 0.5vh;
@@ -631,9 +639,9 @@ export default {
     line-height: 15vh;
     font-size: 30px;
 }
-.legend60 {
+.legend20 {
     background: v-bind(color);
-    filter: brightness(160%);
+    filter: brightness(80%);
     position: absolute;
     left: 45.5vw;
     top: 0.5vh;
@@ -644,9 +652,9 @@ export default {
     line-height: 15vh;
     font-size: 30px;
 }
-.legend80 {
+.legend0 {
     background: v-bind(color);
-    filter: brightness(200%);
+    filter: brightness(40%);
     position: absolute;
     left: 60.5vw;
     top: 0.5vh;
@@ -656,5 +664,13 @@ export default {
     text-align: center;
     line-height: 15vh;
     font-size: 30px;
+}
+.colorPicker {
+    position: absolute;
+    margin-top: 43.7vh;
+    margin-bottom: auto;
+    margin-left: 1.5vw;
+    max-height: 200px;
+    max-width: 200px;
 }
 </style>
