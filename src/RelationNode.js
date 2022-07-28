@@ -7,8 +7,6 @@ export class RelationNode extends Node {
         this.name = name;
         this.start = input;
         this.end = output;
-        this.addInputInterface(input.name);
-        this.addOutputInterface(output.name);
         this.absValue = absValue;
         this.relValue = relValue;
         this.absRank = 80;

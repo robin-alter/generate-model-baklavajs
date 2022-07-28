@@ -1,9 +1,11 @@
 <template>
     <v-app >
         <v-container 
+        style="height:80%; min-height:650px"
         fluid 
         > 
             <v-row
+                class="fill-height"
                 no-gutters
                 style="flex-wrap: nowrap"
             >
@@ -20,80 +22,303 @@
                     style="min-width: 100px;"
                     class="flex-grow-0 flex-shrink-1"
                 >
-                    <v-card>
+                    <v-card
+                    class="fill-height"
+                    >
                         <v-card-title> 
                             Options
                         </v-card-title>
                         <v-card-actions>
+                            <v-btn @click="saveGraph()">Save Graph</v-btn>
+                        </v-card-actions>
+                        <v-card-actions>
                             <v-btn @click="resetGraph()">Reset Graph</v-btn>
                         </v-card-actions>
                         <v-card-actions>
-                            <v-btn @click="toggleHeatmap()">Toggle Heatmap</v-btn>
+                            <v-switch
+                            v-model="heatmap"
+                            label="Toggle Heatmap"
+                            :input-value="true"
+                            @change="repaintGraph()"
+                            ></v-switch>
                         </v-card-actions>
                         <v-card-actions>
-                            <v-btn @click="toggleValue()">Toggle Values</v-btn> 
+                            <v-switch
+                            v-model="displayMode"
+                            label="Change Display Mode"
+                            :input-value="true"
+                            false-value="atLeastOnce"
+                            true-value="absolute"
+                            @change="repaintGraph()"
+                            ></v-switch>
                         </v-card-actions>
-                        <v-color-picker
-                        canvas-height="200px"
-                        hide-inputs
-                        v-model=color
-                        >
-                        </v-color-picker>
+                        <v-text-field 
+                        placeholder="Category Node Color"
+                        hide-details 
+                        class="ma-0 pa-0" 
+                        readonly 
+                        solo>
+                            <template v-slot:append>
+                                <v-menu v-model="categoryMenu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false">
+                                    <template v-slot:activator="{ on }">
+                                        <div :style="swatchStyleCategory" v-on="on" />
+                                    </template>
+                                    <v-card>
+                                        <v-card-text class="pa-0">
+                                            <v-color-picker v-model="categoryColor" flat />
+                                        </v-card-text>
+                                    </v-card>
+                                </v-menu>
+                            </template>
+                        </v-text-field>
+                        <v-text-field 
+                        placeholder="Relationship Node Color"
+                        hide-details 
+                        class="ma-0 pa-0" 
+                        readonly 
+                        solo>
+                            <template v-slot:append>
+                                <v-menu v-model="relationMenu" top nudge-bottom="105" nudge-left="16" :close-on-content-click="false">
+                                    <template v-slot:activator="{ on }">
+                                        <div :style="swatchStyleRelation" v-on="on" />
+                                    </template>
+                                    <v-card>
+                                        <v-card-text class="pa-0">
+                                            <v-color-picker v-model="relationColor" flat />
+                                        </v-card-text>
+                                    </v-card>
+                                </v-menu>
+                            </template>
+                        </v-text-field>
                     </v-card>
                 </v-col>
             </v-row>
-            <v-row>
-
-            </v-row>
-            <v-card>           
-                <v-card-title>
-                    Legend
-                </v-card-title>
-                <div class="legend0">   {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}     </div>
-                <div class="legend20">  {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}} </div>
-                <div class="legend40">  {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}} </div>
-                <div class="legend60">  {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}} </div>
-                <div class="legend80">  {{maximum*0}} - {{Math.floor(maximum*0.2)}}                 </div>
-            </v-card>
         </v-container>
+        <v-container
+        style="height:20%; min-height: 150px;"
+        fluid 
+        >
+            <v-row
+                class="fill-height"
+                no-gutters
+                style="flex-wrap: nowrap"
+            >
+                <v-col
+                    cols="auto"
+                    style="min-width: 100px; max-width: 50%; min-height: 50px;"
+                    class="flex-grow-1 flex-shrink-0 fill-height"
+                >   
+                    <v-card class="fill-height">           
+                        <v-card-title>
+                            Category Nodes
+                        </v-card-title>
+                        <v-row
+                            class=""
+                            no-gutters
+                            style="flex-wrap: nowrap; height: 50% "
+                        >
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card 
+                                class="fill-height"
+                                >
+                                    <div class="legendCategory0">
+                                        {{maximum*0}} - {{Math.floor(maximum*0.2)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendCategory20">
+                                     {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendCategory40">
+                                        {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendCategory60">
+                                        {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendCategory80">
+                                        {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                        </v-row>
+                    </v-card>
+                </v-col>            
+                <v-col
+                    cols="auto"
+                    style="min-width: 100px; max-width: 50%;min-height: 50px;"
+                    class="flex-grow-1 flex-shrink-0 fill-height"
+                >   
+                    <v-card class="fill-height">           
+                        <v-card-title>
+                            Relationship Nodes
+                        </v-card-title>
+                        <v-row
+                            class=""
+                            no-gutters
+                            style="flex-wrap: nowrap; height: 50% "
+                        >
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card 
+                                class="fill-height"
+                                >
+                                    <div class="legendRelation0">
+                                        {{maximum*0}} - {{Math.floor(maximum*0.2)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendRelation20">
+                                     {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendRelation40">
+                                        {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendRelation60">
+                                        {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                            <v-col
+                                cols="auto"
+                                style="min-width: 20px; max-width: 20%;"
+                                class="flex-grow-1 flex-shrink-0 fill-height"
+                            > 
+                                <v-card class="fill-height">
+                                    <div class="legendRelation80">
+                                        {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}
+                                    </div>
+                                </v-card>
+                            </v-col>
+                        </v-row>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </v-container>                    
     </v-app>
 </template>
 
 <script>
 import { Editor } from "@baklavajs/core";
 import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
-import { OptionPlugin } from "@baklavajs/plugin-options-vue";
-import { Engine } from "@baklavajs/plugin-engine";
+import { InterfaceTypePlugin } from '@baklavajs/plugin-interface-types'
 import { ColorNode } from "./ColorNode";
 import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
 
 export default {
-    components: {
-    },
     data() {
         return {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
-            engine: new Engine(true),
-            allNodes: [],
+            intfTypePlugin: new InterfaceTypePlugin(),
             tokenList: [],
             relationList: [],
-            color : 'green',
-            mode: "absolute",
+            categoryColor : 'green',
+            relationColor : 'blue',
+            heatmap: true,
+            displayMode: "absolute",
             maximum: 0,
             absMax: 0,
-            relMax: 0
+            relMax: 0,
+            categoryMenu: false,
+            relationMenu: false
         };
+    },
+    computed: {
+        swatchStyleCategory() {
+        const { categoryColor, categoryMenu } = this
+        return {
+            backgroundColor: categoryColor,
+            cursor: 'pointer',
+            height: '30px',
+            width: '30px',
+            borderRadius: categoryMenu ? '50%' : '4px',
+            transition: 'border-radius 200ms ease-in-out'
+        }
+        },
+        swatchStyleRelation() {
+        const { relationColor, relationMenu } = this
+        return {
+            backgroundColor: relationColor,
+            cursor: 'pointer',
+            height: '30px',
+            width: '30px',
+            borderRadius: relationMenu ? '50%' : '4px',
+            transition: 'border-radius 200ms ease-in-out'
+        }
+        }
     },
     created() {
         this.editor.use(this.viewPlugin);
-        this.editor.use(new OptionPlugin());
-        this.editor.use(this.engine);
 
         this.editor.registerNodeType("ColorNode", ColorNode);
         this.editor.registerNodeType("RelationNode", RelationNode);
+
+        this.intfTypePlugin.addType("input", "rgba(255, 255, 255, 1)");
+        this.intfTypePlugin.addType("output", "rgba(255, 255, 255, 0)");
+        this.intfTypePlugin.addConversion("input", "output");
+
+        this.editor.use(this.intfTypePlugin);
 
         this.tokenList = this.generateRandomTokens(5);
         this.relationList = this.generateRandomRelations(5);
@@ -193,12 +418,13 @@ export default {
             var outputName = 0;
             var end = node.end;
             var start = node.start;
+            
+            node.addInputInterface(start.name, {type: "input"});
+            node.addOutputInterface(end.name, {type: "output"});
 
             end.interfaces.forEach(inter => {
                 if(inter.isInput) {
-                    if(inter.connectionCount < 1) {
-                        validInput = inter;
-                    }
+                    validInput = inter;
                 }
             });
             start.interfaces.forEach(inter => {
@@ -217,7 +443,7 @@ export default {
                 )
             }   else if(validInput == 0 && validOutput != 0) {
                 inputName = (end.interfaces.size).toString();
-                end.addInputInterface(inputName);
+                end.addInputInterface(inputName, {type: "input" });
                 this.editor.addConnection(
                     end.getInterface(inputName),
                     node.getInterface(end.name)
@@ -228,7 +454,7 @@ export default {
                 )
             }   else if(validInput != 0 && validOutput == 0) {
                 outputName = (start.interfaces.size).toString();
-                start.addOutputInterface(outputName);
+                start.addOutputInterface(outputName, {type: "output" });
                 this.editor.addConnection(
                     validInput,
                     node.getInterface(end.name)
@@ -240,8 +466,8 @@ export default {
             }   else {
                 inputName = (end.interfaces.size).toString();
                 outputName = (start.interfaces.size).toString();
-                end.addInputInterface(inputName);
-                start.addOutputInterface(outputName);
+                end.addInputInterface(inputName, {type: "input"});
+                start.addOutputInterface(outputName, {type: "output"});
                 this.editor.addConnection(
                     end.getInterface(inputName),
                     node.getInterface(end.name)
@@ -323,88 +549,90 @@ export default {
             return maximums;
         },
         paintNodes(nodeList) {
-            if(this.mode == "absolute") {
-                this.maximum = this.absMax;
-                nodeList.forEach(node => {
-                    switch (node.absRank) {
-                        case 80:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val80Rel"
-                            } else {
-                            node.customClasses  = "val80";
-                            }
-                            break;                        
-                        case 60:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val60Rel"
-                            } else {
-                            node.customClasses = "val60";
-                            }
-                            break;                        
-                        case 40:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val40Rel"
-                            } else {
-                            node.customClasses = "val40";
-                            }
-                            break;                        
-                        case 20:                            
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val20Rel"
-                            } else {
-                            node.customClasses = "val20";
-                            }
-                            break;              
-                        case 0:                            
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val0Rel"
-                            } else {
-                            node.customClasses = "val0";
-                            }
-                            break;
-                    }
-                });
-            } else if(this.mode == "relative") {
-                this.maximum = this.relMax;
-                nodeList.forEach(node => {
-                    switch (node.relRank) {
-                        case 80:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val80Rel"
-                            } else {
-                            node.customClasses  = "val80";
-                            }
-                            break;                        
-                        case 60:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val60Rel"
-                            } else {
-                            node.customClasses = "val60";
-                            }
-                            break;                        
-                        case 40:
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val40Rel"
-                            } else {
-                            node.customClasses = "val40";
-                            }
-                            break;                        
-                        case 20:                            
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val20Rel"
-                            } else {
-                            node.customClasses = "val20";
-                            }
-                            break;              
-                        case 0:                            
-                            if(node.type=="RelationNode") {
-                                node.customClasses = "val0Rel"
-                            } else {
-                            node.customClasses = "val0";
-                            }
-                            break;
-                    }
-                });
+            if(this.heatmap) {
+                if(this.displayMode == "absolute") {
+                    this.maximum = this.absMax;
+                    nodeList.forEach(node => {
+                        switch (node.absRank) {
+                            case 80:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val80Rel"
+                                } else {
+                                node.customClasses  = "val80";
+                                }
+                                break;                        
+                            case 60:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val60Rel"
+                                } else {
+                                node.customClasses = "val60";
+                                }
+                                break;                        
+                            case 40:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val40Rel"
+                                } else {
+                                node.customClasses = "val40";
+                                }
+                                break;                        
+                            case 20:                            
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val20Rel"
+                                } else {
+                                node.customClasses = "val20";
+                                }
+                                break;              
+                            case 0:                            
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val0Rel"
+                                } else {
+                                node.customClasses = "val0";
+                                }
+                                break;
+                        }
+                    });
+                } else if(this.displayMode == "atLeastOnce") {
+                    this.maximum = this.relMax;
+                    nodeList.forEach(node => {
+                        switch (node.relRank) {
+                            case 80:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val80Rel"
+                                } else {
+                                node.customClasses  = "val80";
+                                }
+                                break;                        
+                            case 60:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val60Rel"
+                                } else {
+                                node.customClasses = "val60";
+                                }
+                                break;                        
+                            case 40:
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val40Rel"
+                                } else {
+                                node.customClasses = "val40";
+                                }
+                                break;                        
+                            case 20:                            
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val20Rel"
+                                } else {
+                                node.customClasses = "val20";
+                                }
+                                break;              
+                            case 0:                            
+                                if(node.type=="RelationNode") {
+                                    node.customClasses = "val0Rel"
+                                } else {
+                                node.customClasses = "val0";
+                                }
+                                break;
+                        }
+                    });
+                }
             } else {
                 nodeList.forEach(node => {                           
                     if(node.type=="RelationNode") {
@@ -418,24 +646,6 @@ export default {
         resetGraph(){
             this.removeAllNodes();
             this.initializeGraph();
-        },
-        toggleHeatmap() {
-            if(this.mode == "absolute" || this.mode == "relative") {
-                this.mode = "none";
-            }else {
-                this.mode = "absolute";
-            }
-            this.repaintGraph();
-        },
-        toggleValue() {
-            if(this.mode == "absolute") {
-                this.mode = "relative";
-            } else if(this.mode == "relative")  {
-                this.mode = "absolute";
-            } else {
-                this.mode = "absolute";
-            }
-            this.repaintGraph();
         },
         repaintGraph() {
             var nodeList = this.getNodeList();
@@ -471,78 +681,134 @@ export default {
                 nodeList.push(node);
             });
             return nodeList;
+        },
+        saveGraph() {
+            const data = JSON.stringify(this.editor.save())
+            const blob = new Blob([data], {type: 'text/plain'})
+            const e = document.createEvent('MouseEvents'),
+            a = document.createElement('a');
+            a.download = "graph.json";
+            a.href = window.URL.createObjectURL(blob);
+            a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
+            e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            a.dispatchEvent(e);
         }
     }
 };
 </script>
 
-<style >
+<style  >
 
 .--input {
     max-height: 0px;
+}
+.connection {
+    stroke-width: 4px;
 }
 
 .--output {
     max-height: 0px;
 }
 
-.__port{
-        opacity: 0;
-}
 .val0 {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(categoryColor);
     filter: brightness(200%);
 }
 .val0 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val20 {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(categoryColor);
     filter: brightness(160%);
 }
 .val20 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val40 {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(categoryColor);
     filter: brightness(120%);
 }
 .val40 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val60 {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(categoryColor);
     filter: brightness(80%);
 }
 .val60 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val80 {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(categoryColor);
     filter: brightness(40%);
 }
 .val80 .__title{
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 
 .val0Rel {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(relationColor);
     filter: brightness(200%);
     max-width: 8rem;
 }
@@ -550,10 +816,19 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val20Rel {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(relationColor);
     filter: brightness(160%);
     max-width: 8rem;
 }
@@ -561,10 +836,19 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val40Rel {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(relationColor);
     filter: brightness(120%);
     max-width: 8rem;
 }
@@ -572,10 +856,19 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val60Rel {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(relationColor);
     filter: brightness(80%);
     max-width: 8rem;
 }
@@ -583,10 +876,19 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 .val80Rel {
     text-align: center;
-    background: v-bind(color);
+    background: v-bind(relationColor);
     filter: brightness(40%);
     max-width: 8rem;
 }
@@ -594,6 +896,15 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 1.2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 
 .default {
@@ -603,6 +914,15 @@ export default {
     overflow-wrap: break-word;
     max-height: fit-content;
     font-size: 2rem;
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 
 .defaultRel {
@@ -612,71 +932,185 @@ export default {
 .defaultRel .__title {
     overflow-wrap: break-word;
     max-height: fit-content;
-    font-size: 1.2rem;
+    font-size: 1.2rem;    
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
-.legend80 {
-    background: v-bind(color);
+.legendCategory0 {
+    background: v-bind(categoryColor);
     filter: brightness(200%);
-    position: absolute;
-    left: 0.5vw;
-    top: 0.5vh;
-    height: 17vh;
-    width: 14vw;
-    border:2px solid #000000;
+    height: 100%;
     text-align: center;
-    line-height: 15vh;
-    font-size: 30px;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
-.legend60 {
-    background: v-bind(color);
+.legendCategory20 {
+    background: v-bind(categoryColor);
     filter: brightness(160%);
-    position: absolute;
-    left: 15.5vw ;
-    top: 0.5vh;
-    height: 17vh;
-    width: 14vw;
-    border:2px solid #000000;
-    text-align: center;
-    line-height: 15vh;
-    font-size: 30px;
+    height: 100%;
+    text-align: center;    
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
-.legend40 {
-    background: v-bind(color);
+.legendCategory40 {
+    background: v-bind(categoryColor);
     filter: brightness(120%);
-    position: absolute;
-    left: 30.5vw;
-    top: 0.5vh;
-    height: 17vh;
-    width: 14vw;
-    border:2px solid #000000;
+    height: 100%;
     text-align: center;
-    line-height: 15vh;
-    font-size: 30px;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
-.legend20 {
-    background: v-bind(color);
+.legendCategory60 {
+    background: v-bind(categoryColor);
     filter: brightness(80%);
-    position: absolute;
-    left: 45.5vw;
-    top: 0.5vh;
-    height: 17vh;
-    width: 14vw;
-    border:2px solid #000000;
+    height: 100%;
     text-align: center;
-    line-height: 15vh;
-    font-size: 30px;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
-.legend0 {
-    background: v-bind(color);
+.legendCategory80 {
+    background: v-bind(categoryColor);
     filter: brightness(40%);
-    position: absolute;
-    left: 60.5vw;
-    top: 0.5vh;
-    height: 17vh;
-    width: 14vw;
-    border:2px solid #000000;
+    height: 100%;
     text-align: center;
-    line-height: 15vh;
-    font-size: 30px;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
+}
+.legendRelation0 {
+    background: v-bind(relationColor);
+    filter: brightness(200%);
+    height: 100%;
+    text-align: center;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
+}
+.legendRelation20 {
+    background: v-bind(relationColor);
+    filter: brightness(160%);
+    height: 100%;
+    text-align: center;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
+}
+.legendRelation40 {
+    background: v-bind(relationColor);
+    filter: brightness(120%);
+    height: 100%;
+    text-align: center;    
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
+}
+.legendRelation60 {
+    background: v-bind(relationColor);
+    filter: brightness(80%);
+    height: 100%;
+    text-align: center;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
+}
+.legendRelation80 {
+    background: v-bind(relationColor);
+    filter: brightness(40%);
+    height: 100%;
+    text-align: center;
+    font-size: 200%;
+    color: rgb(240, 227, 227);
+    text-shadow:
+        0.05em 0 black,
+        0 0.05em black,
+        -0.05em 0 black,
+        0 -0.05em black,
+        -0.05em -0.05em black,
+        -0.05em 0.05em black,
+        0.05em -0.05em black,
+        0.05em 0.05em black;
 }
 </style>

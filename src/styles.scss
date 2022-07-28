@@ -1,10 +1,14 @@
 @import "../node_modules/@baklavajs/plugin-renderer-vue/dist/styles/variables.scss";
 
-$color-node-background: rgba(255, 255, 255, 0.6);
-$color-node-foreground: rgba(252, 252, 252, 0);
+$color-node-background: rgba(255, 255, 255, 1);
+$color-node-foreground: rgba(0, 0, 0, 0);
 $color-node-title-background: rgba(255, 255, 255, 0);
-$color-node-title-foreground: rgb(0, 0, 0);
+$color-node-title-foreground: rgb(255, 255, 255);
 
-$color-connection-default: blue;
+$color-pattern-default: #ffffffd8;
+$color-pattern-line: #746a6a;
+$color-pattern-black: #00000000;
+
+$color-connection-default: black;
 
 @import "../node_modules/@baklavajs/plugin-renderer-vue/dist/styles/styles.scss";
