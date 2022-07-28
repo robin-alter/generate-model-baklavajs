@@ -9,6 +9,6 @@ $color-pattern-default: #ffffffd8;
 $color-pattern-line: #746a6a;
 $color-pattern-black: #00000000;
 
-$color-connection-default: black;
+$color-connection-default: rgb(138, 130, 130);
 
 @import "../node_modules/@baklavajs/plugin-renderer-vue/dist/styles/styles.scss";

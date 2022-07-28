@@ -130,7 +130,7 @@
                                 class="fill-height"
                                 >
                                     <div class="legendCategory0">
-                                        {{maximum*0}} - {{Math.floor(maximum*0.2)}}
+                                        {{maximumCategory*0}} - {{Math.floor(maximumCategory*0.2)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -141,7 +141,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendCategory20">
-                                     {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}
+                                     {{Math.floor(maximumCategory*0.2)+1}} - {{Math.floor(maximumCategory*0.4)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -152,7 +152,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendCategory40">
-                                        {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}
+                                        {{Math.floor(maximumCategory*0.4)+1}} - {{Math.floor(maximumCategory*0.6)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -163,7 +163,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendCategory60">
-                                        {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}
+                                        {{Math.floor(maximumCategory*0.6)+1}} - {{Math.floor(maximumCategory*0.8)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -174,7 +174,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendCategory80">
-                                        {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}
+                                        {{Math.floor(maximumCategory*0.8)+1}} - {{Math.floor(maximumCategory)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -204,7 +204,7 @@
                                 class="fill-height"
                                 >
                                     <div class="legendRelation0">
-                                        {{maximum*0}} - {{Math.floor(maximum*0.2)}}
+                                        {{maximumRelation*0}} - {{Math.floor(maximumRelation*0.2)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -215,7 +215,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendRelation20">
-                                     {{Math.floor(maximum*0.2)+1}} - {{Math.floor(maximum*0.4)}}
+                                     {{Math.floor(maximumRelation*0.2)+1}} - {{Math.floor(maximumRelation*0.4)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -226,7 +226,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendRelation40">
-                                        {{Math.floor(maximum*0.4)+1}} - {{Math.floor(maximum*0.6)}}
+                                        {{Math.floor(maximumRelation*0.4)+1}} - {{Math.floor(maximumRelation*0.6)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -237,7 +237,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendRelation60">
-                                        {{Math.floor(maximum*0.6)+1}} - {{Math.floor(maximum*0.8)}}
+                                        {{Math.floor(maximumRelation*0.6)+1}} - {{Math.floor(maximumRelation*0.8)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -248,7 +248,7 @@
                             > 
                                 <v-card class="fill-height">
                                     <div class="legendRelation80">
-                                        {{Math.floor(maximum*0.8)+1}} - {{Math.floor(maximum)}}
+                                        {{Math.floor(maximumRelation*0.8)+1}} - {{Math.floor(maximumRelation)}}
                                     </div>
                                 </v-card>
                             </v-col>
@@ -278,13 +278,16 @@ export default {
             intfTypePlugin: new InterfaceTypePlugin(),
             tokenList: [],
             relationList: [],
-            categoryColor : 'green',
-            relationColor : 'blue',
+            categoryColor : 'rgb(133, 61, 195)',
+            relationColor : 'rgb(21, 97, 97)',
             heatmap: true,
             displayMode: "absolute",
-            maximum: 0,
-            absMax: 0,
-            relMax: 0,
+            maximumCategory: 0,
+            absMaxCategory: 0,
+            relMaxCategory: 0,            
+            maximumRelation: 0,
+            absMaxRelation: 0,
+            relMaxRelation: 0,
             categoryMenu: false,
             relationMenu: false
         };
@@ -349,8 +352,8 @@ export default {
                 while(start == end) {
                     end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
                 } 
-                var absValue = Math.floor(Math.random() * 250);
-                var relValue = Math.floor(Math.random() * 250);
+                var absValue = Math.floor(Math.random() * 60);
+                var relValue = Math.floor(Math.random() * 60);
                 var relation = new Relation("Relation".concat(i.toString()),absValue, relValue, start, end);
                 relationList.push(relation);
             }
@@ -484,10 +487,47 @@ export default {
             }
         },
         partitionNodes(nodeList) {
-            var maximums = this.getMaximums(nodeList);
-            var absMax = maximums[0];
-            var relMax = maximums[1];
+            var maximums = this.getMaximums(nodeList, "ColorNode");
+            this.absMaxCategory = maximums[0];
+            this.relMaxCategory = maximums[1];
 
+            maximums = this.getMaximums(nodeList, "RelationNode");
+            this.absMaxRelation = maximums[0];
+            this.relMaxRelation = maximums[1];
+
+            this.setNodeRanks(nodeList, "ColorNode");
+            this.setNodeRanks(nodeList, "RelationNode");
+        },
+        getMaximums(nodeList, NodeType) {
+            var maximums = [];
+            var maxAbs = 0;
+            var maxRel = 0;
+            nodeList.forEach(node => {
+                if(node.type == NodeType){
+                    var absVal = node.absValue;
+                    var relVal = node.relValue;
+                    if(absVal >= maxAbs) {
+                        maxAbs = absVal;
+                    }
+                    if(relVal >= maxRel) {
+                        maxRel = relVal;
+                    }
+                }
+            });
+            maximums.push(maxAbs);
+            maximums.push(maxRel);
+            return maximums;
+        },
+        setNodeRanks(nodeList,NodeType) {
+            var absMax = 0;
+            var relMax = 0;
+            if(NodeType == "RelationNode"){
+                absMax = this.absMaxRelation
+                relMax = this.relMaxRelation
+            } else if(NodeType == "ColorNode") {
+                absMax = this.absMaxCategory
+                relMax = this.relMaxCategory
+            }
             var abs80 = absMax *0.8;
             var abs60 = absMax *0.6;
             var abs40 = absMax *0.4;
@@ -498,65 +538,48 @@ export default {
             var rel40 = relMax *0.4;
             var rel20 = relMax *0.2;
             nodeList.forEach(node => {
-                var absVal = node.absValue;
-                var relVal = node.relValue;
-                if(absVal >= abs80) {
-                    node.absRank = 80;
-                } 
-                else if (abs80 > absVal && absVal >= abs60) {
-                    node.absRank = 60;
-                }               
-                else if (abs60 > absVal && absVal >= abs40) {
-                    node.absRank = 40;
-                }
-                else if (abs40 > absVal && absVal >= abs20) {
-                    node.absRank = 20;
-                }
-                else if (abs20 > absVal) {
-                    node.absRank = 0;
-                }
+                if(node.type == NodeType) {
+                    var absVal = node.absValue;
+                    var relVal = node.relValue;
+                    if(absVal >= abs80) {
+                        node.absRank = 80;
+                    } 
+                    else if (abs80 > absVal && absVal >= abs60) {
+                        node.absRank = 60;
+                    }               
+                    else if (abs60 > absVal && absVal >= abs40) {
+                        node.absRank = 40;
+                    }
+                    else if (abs40 > absVal && absVal >= abs20) {
+                        node.absRank = 20;
+                    }
+                    else if (abs20 > absVal) {
+                        node.absRank = 0;
+                    }
 
-                if(relVal >= rel80) {
-                    node.relRank = 80;
-                } 
-                else if (rel80 > relVal && relVal >= rel60) {
-                    node.relRank = 60;
-                }               
-                else if (rel60 > relVal && relVal >= rel40) {
-                    node.relRank = 40;
-                }
-                else if (rel40 > relVal && relVal >= rel20) {
-                    node.relRank = 20;
-                }
-                else if (rel20 > relVal) {
-                    node.relRank = 0;
-                }    
-            });
-        },
-        getMaximums(nodeList) {
-            var maximums = [];
-            var maxAbs = 0;
-            var maxRel = 0;
-            nodeList.forEach(node => {
-                var absVal = node.absValue;
-                var relVal = node.relValue;
-                if(absVal >= maxAbs) {
-                    maxAbs = absVal;
-                }
-                if(relVal >= maxRel) {
-                    maxRel = relVal;
+                    if(relVal >= rel80) {
+                        node.relRank = 80;
+                    } 
+                    else if (rel80 > relVal && relVal >= rel60) {
+                        node.relRank = 60;
+                    }               
+                    else if (rel60 > relVal && relVal >= rel40) {
+                        node.relRank = 40;
+                    }
+                    else if (rel40 > relVal && relVal >= rel20) {
+                        node.relRank = 20;
+                    }
+                    else if (rel20 > relVal) {
+                        node.relRank = 0;
+                    }    
                 }
             });
-            this.relMax = maxRel;
-            this.absMax = maxAbs;
-            maximums.push(maxAbs);
-            maximums.push(maxRel);
-            return maximums;
         },
         paintNodes(nodeList) {
             if(this.heatmap) {
                 if(this.displayMode == "absolute") {
-                    this.maximum = this.absMax;
+                    this.maximumCategory = this.absMaxCategory;
+                    this.maximumRelation = this.absMaxRelation;
                     nodeList.forEach(node => {
                         switch (node.absRank) {
                             case 80:
@@ -597,7 +620,8 @@ export default {
                         }
                     });
                 } else if(this.displayMode == "atLeastOnce") {
-                    this.maximum = this.relMax;
+                    this.maximumCategory = this.relMaxCategory;
+                    this.maximumRelation = this.relMaxRelation;
                     nodeList.forEach(node => {
                         switch (node.relRank) {
                             case 80:
@@ -711,6 +735,16 @@ export default {
     max-height: 0px;
 }
 
+.node-interface .__port {
+    border-radius: 50%;
+    background: black;
+    height: 15px;
+    width: 15px;
+}
+
+.__port-output {
+    opacity: 0;
+}
 .val0 {
     text-align: center;
     background: v-bind(categoryColor);
