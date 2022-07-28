@@ -45,12 +45,16 @@
                         <v-card-actions>
                             <v-switch
                             v-model="displayMode"
-                            label="Change Display Mode"
                             :input-value="true"
                             false-value="atLeastOnce"
                             true-value="absolute"
                             @change="repaintGraph()"
-                            ></v-switch>
+                            >
+                                <template v-slot:label>
+                                    Display Mode: <br>
+                                    {{displayMode=="atLeastOnce" ? 'At least once' : 'Absolute' }}
+                                </template>
+                            </v-switch>
                         </v-card-actions>
                         <v-text-field 
                         placeholder="Category Node Color"
@@ -65,7 +69,7 @@
                                     </template>
                                     <v-card>
                                         <v-card-text class="pa-0">
-                                            <v-color-picker v-model="categoryColor" flat />
+                                            <v-color-picker v-model="categoryColor" flat hide-inputs/>
                                         </v-card-text>
                                     </v-card>
                                 </v-menu>
@@ -84,7 +88,7 @@
                                     </template>
                                     <v-card>
                                         <v-card-text class="pa-0">
-                                            <v-color-picker v-model="relationColor" flat />
+                                            <v-color-picker v-model="relationColor" flat hide-inputs/>
                                         </v-card-text>
                                     </v-card>
                                 </v-menu>
@@ -264,6 +268,7 @@ import { ColorNode } from "./ColorNode";
 import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
+import "./styles.scss"
 
 export default {
     data() {
@@ -697,13 +702,9 @@ export default {
 };
 </script>
 
-<style  >
-
+<style >
 .--input {
     max-height: 0px;
-}
-.connection {
-    stroke-width: 4px;
 }
 
 .--output {
@@ -1112,5 +1113,8 @@ export default {
         -0.05em 0.05em black,
         0.05em -0.05em black,
         0.05em 0.05em black;
+}
+.connection {
+    stroke-width: 4px;
 }
 </style>

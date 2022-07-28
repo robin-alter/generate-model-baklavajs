@@ -2,7 +2,6 @@ import Vue from 'vue'
 import App from './App.vue'
 
 import { BaklavaVuePlugin } from '@baklavajs/plugin-renderer-vue'
-import "./styles.scss"
 import vuetify from './plugins/vuetify'
 
 Vue.use(BaklavaVuePlugin)
