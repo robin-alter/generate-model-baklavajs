@@ -530,6 +530,7 @@ export default {
         setNodeRanks(nodeList,NodeType) {
             var absMax = 0;
             var relMax = 0;
+            var step = 0.2;
             if(NodeType == "RelationNode"){
                 absMax = this.absMaxRelation
                 relMax = this.relMaxRelation
@@ -537,50 +538,22 @@ export default {
                 absMax = this.absMaxCategory
                 relMax = this.relMaxCategory
             }
-            var abs80 = absMax *0.8;
-            var abs60 = absMax *0.6;
-            var abs40 = absMax *0.4;
-            var abs20 = absMax *0.2;
-            
-            var rel80 = relMax *0.8;
-            var rel60 = relMax *0.6;
-            var rel40 = relMax *0.4;
-            var rel20 = relMax *0.2;
             nodeList.forEach(node => {
                 if(node.type == NodeType) {
                     var absVal = node.absValue;
                     var relVal = node.relValue;
-                    if(absVal >= abs80) {
-                        node.absRank = 80;
-                    } 
-                    else if (abs80 > absVal && absVal >= abs60) {
-                        node.absRank = 60;
-                    }               
-                    else if (abs60 > absVal && absVal >= abs40) {
-                        node.absRank = 40;
+                    for(let i = 0; i < 5; i++) {
+                        var upperLimitAbs = absMax*((i+1)*step);
+                        var lowerLimitAbs = absMax*i*step;
+                        if(upperLimitAbs >= absVal && absVal > lowerLimitAbs) {
+                            node.absRank = Math.floor(i*step*100);
+                        }
+                        var upperLimitRel = relMax*((i+1)*step);
+                        var lowerLimitRel = relMax*i;
+                        if(upperLimitRel >= relVal && relVal > lowerLimitRel) {
+                            node.relRank = Math.floor(i*step*100);
+                        }
                     }
-                    else if (abs40 > absVal && absVal >= abs20) {
-                        node.absRank = 20;
-                    }
-                    else if (abs20 > absVal) {
-                        node.absRank = 0;
-                    }
-
-                    if(relVal >= rel80) {
-                        node.relRank = 80;
-                    } 
-                    else if (rel80 > relVal && relVal >= rel60) {
-                        node.relRank = 60;
-                    }               
-                    else if (rel60 > relVal && relVal >= rel40) {
-                        node.relRank = 40;
-                    }
-                    else if (rel40 > relVal && relVal >= rel20) {
-                        node.relRank = 20;
-                    }
-                    else if (rel20 > relVal) {
-                        node.relRank = 0;
-                    }    
                 }
             });
         },
