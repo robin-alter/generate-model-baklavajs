@@ -268,9 +268,18 @@ import { ColorNode } from "./ColorNode";
 import { RelationNode} from "./RelationNode"
 import { Token } from "./token";
 import { Relation } from "./relation";
+import { tore_codes, tore_relationships } from "./TORE";
 import "./styles.scss"
 
 export default {
+    props: {
+        tore_code_frequency: {
+            required: true
+        },
+        tore_relationship_frequency: {
+            required: true
+        }
+    },
     data() {
         return {
             editor: new Editor(),
@@ -278,8 +287,8 @@ export default {
             intfTypePlugin: new InterfaceTypePlugin(),
             tokenList: [],
             relationList: [],
-            categoryColor : 'rgb(133, 61, 195)',
-            relationColor : 'rgb(21, 97, 97)',
+            categoryColor : 'rgb(51, 128, 43)',
+            relationColor : 'rgb(43, 47, 121)',
             heatmap: true,
             displayMode: "absolute",
             maximumCategory: 0,
@@ -328,34 +337,33 @@ export default {
 
         this.editor.use(this.intfTypePlugin);
 
-        this.tokenList = this.generateRandomTokens(5);
-        this.relationList = this.generateRandomRelations(5);
+        this.tokenList = this.createTokens();
+        this.relationList = this.createRelations();
 
         this.initializeGraph();
     },
     methods: {
-        generateRandomTokens(amount) {
-            var tokenList = [];
-            for(let i = 0; i < amount; i++) {
-                var absValue = Math.floor(Math.random() * 250);
-                var relValue = Math.floor(Math.random() * 250);
-                var element = new Token("Element".concat(i.toString()),absValue, relValue);
-                tokenList.push(element)
+        createTokens() {
+            var tokenList = {};
+            for (const [code,frequencies] of Object.entries(this.tore_code_frequency)) {
+                tore_codes.forEach(acceptableCode => {
+                    if(code == acceptableCode) {
+                        var element = new Token(code, frequencies[0], frequencies[1]);
+                        tokenList[code] = element;
+                    }
+                });
             }
             return tokenList;
         },
-        generateRandomRelations(amount) {
-            var relationList = [];
-            for (let i= 0; i< amount; i++) {
-                var start = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
-                var end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
-                while(start == end) {
-                    end = this.tokenList[Math.floor(Math.random() * this.tokenList.length)];
-                } 
-                var absValue = Math.floor(Math.random() * 60);
-                var relValue = Math.floor(Math.random() * 60);
-                var relation = new Relation("Relation".concat(i.toString()),absValue, relValue, start, end);
-                relationList.push(relation);
+        createRelations() {
+            var relationList = {};
+            for (const [code,frequencies] of Object.entries(this.tore_relationship_frequency)) {
+                var start = this.tokenList[tore_relationships[code][0]];
+                var end = this.tokenList[tore_relationships[code][1]];
+                if( start != undefined && end != undefined) {
+                    var relation = new Relation(code, frequencies[0], frequencies[1], start, end);
+                    relationList[code] = relation;
+                }
             }
             return relationList;
         },
@@ -368,29 +376,28 @@ export default {
         },
         createNodeListFromData() {
             var nodeList = [];
-            this.tokenList.forEach(token => {
-                var node = this.createNode(ColorNode,token.name, token.absValue, token.relValue);
-                nodeList.push(node);
-            });
-            this.nodeList = nodeList;
-            this.relationList.forEach(relation => {
+            for (const [name,token] of Object.entries(this.tokenList)) {
+                    var node = this.createNode(ColorNode, name, token.absValue, token.relValue);
+                    nodeList.push(node);
+            }
+            for (const [name, relation] of Object.entries(this.relationList)) {
                 var start = 0;
                 var end = 0;
-                this.nodeList.forEach(node => {
+                nodeList.forEach(node => {
                     if(node.name == relation.start.name) {
                         start = node;
-                    } else if(node.name == relation.end.name) {
+                    } 
+                    if(node.name == relation.end.name) {
                         end = node;
                     }
                 }
                 )
                 if(start != 0 && end != 0) {
-                    var node = new RelationNode(relation.name, start, end, relation.absValue, relation.relValue)
+                    node = new RelationNode(name, start, end, relation.absValue, relation.relValue)
                     nodeList.push(node);
                 }
             }
-            )
-            this.nodeList = nodeList;
+
             return nodeList
         },
         createNode(nodeType, name, absValue, relValue) {
@@ -426,9 +433,11 @@ export default {
             var outputName = 0;
             var end = node.end;
             var start = node.start;
+            var endName = end.name.concat("output");
+            var startName = start.name.concat("input");
             
-            node.addInputInterface(start.name, {type: "input"});
-            node.addOutputInterface(end.name, {type: "output"});
+            node.addInputInterface(startName, {type: "input"});
+            node.addOutputInterface(endName, {type: "output"});
 
             end.interfaces.forEach(inter => {
                 if(inter.isInput) {
@@ -443,10 +452,10 @@ export default {
             if(validInput != 0 && validOutput != 0) {
                 this.editor.addConnection(
                     validInput,
-                    node.getInterface(end.name)
+                    node.getInterface(endName)
                 )
                 this.editor.addConnection(
-                    node.getInterface(start.name), 
+                    node.getInterface(startName), 
                     validOutput
                 )
             }   else if(validInput == 0 && validOutput != 0) {
@@ -454,10 +463,10 @@ export default {
                 end.addInputInterface(inputName, {type: "input" });
                 this.editor.addConnection(
                     end.getInterface(inputName),
-                    node.getInterface(end.name)
+                    node.getInterface(endName)
                 )
                 this.editor.addConnection(
-                    node.getInterface(start.name), 
+                    node.getInterface(startName), 
                     validOutput
                 )
             }   else if(validInput != 0 && validOutput == 0) {
@@ -465,11 +474,11 @@ export default {
                 start.addOutputInterface(outputName, {type: "output" });
                 this.editor.addConnection(
                     validInput,
-                    node.getInterface(end.name)
+                    node.getInterface(endName)
                 )
                 this.editor.addConnection(
                     start.getInterface(outputName),
-                    node.getInterface(start.name)
+                    node.getInterface(startName)
                 )
             }   else {
                 inputName = (end.interfaces.size).toString();
@@ -478,11 +487,11 @@ export default {
                 start.addOutputInterface(outputName, {type: "output"});
                 this.editor.addConnection(
                     end.getInterface(inputName),
-                    node.getInterface(end.name)
+                    node.getInterface(endName)
                 );                
                 this.editor.addConnection(
                     start.getInterface(outputName),
-                    node.getInterface(start.name)
+                    node.getInterface(startName)
                 );
             }
         },
