@@ -46,13 +46,13 @@
                             <v-switch
                             v-model="displayMode"
                             :input-value="true"
-                            false-value="atLeastOnce"
-                            true-value="absolute"
+                            false-value="Appearances"
+                            true-value="Occurences"
                             @change="repaintGraph()"
                             >
                                 <template v-slot:label>
                                     Display Mode: <br>
-                                    {{displayMode=="atLeastOnce" ? 'At least once' : 'Absolute' }}
+                                    {{displayMode=="Appearances" ? 'Appearances' : 'Occurences' }}
                                 </template>
                             </v-switch>
                         </v-card-actions>
@@ -290,7 +290,7 @@ export default {
             categoryColor : 'rgb(51, 128, 43)',
             relationColor : 'rgb(43, 47, 121)',
             heatmap: true,
-            displayMode: "absolute",
+            displayMode: "Occurences",
             maximumCategory: 0,
             absMaxCategory: 0,
             relMaxCategory: 0,            
@@ -586,7 +586,7 @@ export default {
         },
         paintNodes(nodeList) {
             if(this.heatmap) {
-                if(this.displayMode == "absolute") {
+                if(this.displayMode == "Occurences") {
                     this.maximumCategory = this.absMaxCategory;
                     this.maximumRelation = this.absMaxRelation;
                     nodeList.forEach(node => {
@@ -628,7 +628,7 @@ export default {
                                 break;
                         }
                     });
-                } else if(this.displayMode == "atLeastOnce") {
+                } else if(this.displayMode == "Appearances") {
                     this.maximumCategory = this.relMaxCategory;
                     this.maximumRelation = this.relMaxRelation;
                     nodeList.forEach(node => {

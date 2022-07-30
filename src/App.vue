@@ -6,6 +6,16 @@ export default {
   components: {
     ModelView
   },
+  data() {
+    return {
+      tore_code_frequency: {},
+      tore_relationship_frequency: {} 
+    }
+  },
+  created() {
+    this.tore_code_frequency = this.generateRandomCodeFrequencies()
+    this.tore_relationship_frequency = this.generateRandomRelationFrequencies()
+  },
   methods: {
     generateRandomCodeFrequencies() {
       var tore_code_frequency = {};
@@ -37,7 +47,7 @@ export default {
 
 <template>
   <ModelView 
-  :tore_code_frequency = "this.generateRandomCodeFrequencies()" 
-  :tore_relationship_frequency = "this.generateRandomRelationFrequencies()"
+  :tore_code_frequency = "this.tore_code_frequency" 
+  :tore_relationship_frequency = "this.tore_relationship_frequency"
   />
 </template>
